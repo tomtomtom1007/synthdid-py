@@ -1,5 +1,10 @@
 # synthdid-py
 
+[![PyPI](https://img.shields.io/pypi/v/synthdid-py.svg)](https://pypi.org/project/synthdid-py/)
+[![Tests](https://github.com/tomtomtom1007/synthdid-py/actions/workflows/ci.yml/badge.svg)](https://github.com/tomtomtom1007/synthdid-py/actions/workflows/ci.yml)
+[![Python](https://img.shields.io/pypi/pyversions/synthdid-py.svg)](https://pypi.org/project/synthdid-py/)
+[![License](https://img.shields.io/pypi/l/synthdid-py.svg)](https://github.com/tomtomtom1007/synthdid-py/blob/main/LICENSE)
+
 **Synthetic Difference-in-Differences for Python** — a complete port of the reference R package
 [`synthdid`](https://github.com/synth-inference/synthdid) by Arkhangelsky, Athey, Hirshberg,
 Imbens and Wager.
