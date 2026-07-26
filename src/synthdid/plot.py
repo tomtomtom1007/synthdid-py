@@ -15,6 +15,8 @@ import numpy as np
 from .estimate import SynthDIDEstimate, synthdid_placebo
 from .solver import contract3
 
+# Matrix products use ``.dot`` rather than ``@``; see the note in solver.py.
+
 __all__ = [
     "synthdid_plot",
     "synthdid_units_plot",
@@ -85,18 +87,20 @@ class _PlotGeometry:
         omega_target = np.concatenate([np.zeros(N0), np.full(N1, 1.0 / N1)])
 
         self.is_sc = bool(np.all(w.lambda_ == 0)) or overlay == 1
-        offset = overlay * float((omega_target - omega_synth) @ Y @ self.lambda_synth)
+        offset = overlay * float(
+            (omega_target - omega_synth).dot(Y).dot(self.lambda_synth)
+        )
 
-        self.obs_trajectory = omega_target @ Y
-        self.syn_trajectory = omega_synth @ Y + offset
+        self.obs_trajectory = omega_target.dot(Y)
+        self.syn_trajectory = omega_synth.dot(Y) + offset
         self.Y = Y
         self.N0, self.T0, self.N1, self.T1 = N0, T0, N1, T1
         self.se = se
 
-        self.treated_post = float(omega_target @ Y @ self.lambda_target)
-        self.treated_pre = float(omega_target @ Y @ self.lambda_synth)
-        self.control_post = float(omega_synth @ Y @ self.lambda_target) + offset
-        self.control_pre = float(omega_synth @ Y @ self.lambda_synth) + offset
+        self.treated_post = float(omega_target.dot(Y).dot(self.lambda_target))
+        self.treated_pre = float(omega_target.dot(Y).dot(self.lambda_synth))
+        self.control_post = float(omega_synth.dot(Y).dot(self.lambda_target)) + offset
+        self.control_pre = float(omega_synth.dot(Y).dot(self.lambda_synth)) + offset
         self.sdid_post = self.control_post + self.treated_pre - self.control_pre
 
         self.time, self.tick_labels = _numeric_time(estimate)
@@ -510,7 +514,7 @@ def synthdid_units_plot(
         lambda_post = np.concatenate([np.zeros(T0), np.full(T1, 1.0 / T1)])
         omega_treat = np.concatenate([np.zeros(N0), np.full(N1, 1.0 / N1)])
         contrast = lambda_post - lambda_pre
-        difs = float(omega_treat @ Y @ contrast) - Y[:N0] @ contrast
+        difs = float(omega_treat.dot(Y).dot(contrast)) - Y[:N0].dot(contrast)
 
         labels = np.asarray(setup.unit_labels()[:N0])
         keep = np.ones(N0, dtype=bool) if units is None else np.isin(labels, np.asarray(units))

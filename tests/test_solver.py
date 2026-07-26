@@ -37,11 +37,11 @@ def test_fw_step_stays_on_the_simplex():
 def test_fw_step_decreases_the_objective():
     rng = np.random.default_rng(1)
     A = rng.normal(size=(30, 5))
-    b = A @ np.array([0.5, 0.5, 0.0, 0.0, 0.0]) + 0.01 * rng.normal(size=30)
+    b = A.dot(np.array([0.5, 0.5, 0.0, 0.0, 0.0])) + 0.01 * rng.normal(size=30)
     eta = 0.05
 
     def objective(x):
-        r = A @ x - b
+        r = A.dot(x) - b
         return r @ r + eta * (x @ x)
 
     x = np.full(5, 0.2)
@@ -57,7 +57,7 @@ def test_sc_weight_fw_recovers_a_known_convex_combination():
     rng = np.random.default_rng(2)
     A = rng.normal(size=(60, 4))
     truth = np.array([0.6, 0.4, 0.0, 0.0])
-    Y = np.column_stack([A, A @ truth])
+    Y = np.column_stack([A, A.dot(truth)])
     out = sc_weight_fw(Y, zeta=0.0, intercept=False, min_decrease=1e-10, max_iter=20_000)
     np.testing.assert_allclose(out["lambda"], truth, atol=5e-3)
 

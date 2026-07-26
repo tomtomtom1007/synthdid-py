@@ -13,6 +13,11 @@ import pytest
 
 from synthdid import did_estimate, sc_estimate, synthdid_estimate
 
+# Matrix products use ``.dot`` rather than ``@`` here for the same reason as in
+# the package itself: ``@`` raises spurious RuntimeWarnings on macOS builds of
+# numpy 2.0 (see the note in src/synthdid/solver.py), and pytest turns those
+# into errors. Pure 1-D inner products are unaffected.
+
 TOLERANCE = 0.03  # relative, matching the R package's own reference test
 
 
@@ -37,11 +42,11 @@ def simplex_least_squares(A, b, zeta=0.0, intercept=False, max_iter=200_000, tol
     penalty = zeta ** 2 * n
 
     def objective(x):
-        r = A @ x - b
+        r = A.dot(x) - b
         return r @ r + penalty * (x @ x)
 
     def gradient(x):
-        return 2 * (A.T @ (A @ x - b)) + 2 * penalty * x
+        return 2 * A.T.dot(A.dot(x) - b) + 2 * penalty * x
 
     step = 1.0 / (2 * (np.linalg.norm(A, 2) ** 2 + penalty))
     x = np.full(p, 1.0 / p)
@@ -84,7 +89,7 @@ def synthdid_reference(Y, N0, T0):
     )
     unit = np.concatenate([-omega, np.full(N - N0, 1 / (N - N0))])
     time = np.concatenate([-lam, np.full(T - T0, 1 / (T - T0))])
-    return float(unit @ Y @ time)
+    return float(unit.dot(Y).dot(time))
 
 
 def sc_reference(Y, N0, T0):
@@ -97,14 +102,14 @@ def sc_reference(Y, N0, T0):
     )
     unit = np.concatenate([-omega, np.full(N - N0, 1 / (N - N0))])
     time = np.concatenate([np.zeros(T0), np.full(T - T0, 1 / (T - T0))])
-    return float(unit @ Y @ time)
+    return float(unit.dot(Y).dot(time))
 
 
 def did_reference(Y, N0, T0):
     N, T = Y.shape
     unit = np.concatenate([np.full(N0, -1 / N0), np.full(N - N0, 1 / (N - N0))])
     time = np.concatenate([np.full(T0, -1 / T0), np.full(T - T0, 1 / (T - T0))])
-    return float(unit @ Y @ time)
+    return float(unit.dot(Y).dot(time))
 
 
 ACCURATE = dict(min_decrease=1e-6, max_iter=100_000)
@@ -139,7 +144,7 @@ def test_solver_reaches_a_comparable_objective(prop99):
     bc = b - b.mean()
 
     def objective(x):
-        r = Ac @ x - bc
+        r = Ac.dot(x) - bc
         return r @ r + zeta ** 2 * len(bc) * (x @ x)
 
     ours = synthdid_estimate(Y, N0, T0, **ACCURATE).weights.omega

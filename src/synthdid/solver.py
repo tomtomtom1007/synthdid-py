@@ -14,6 +14,15 @@ from typing import Optional
 
 import numpy as np
 
+# Matrix products in this package use ``ndarray.dot`` rather than the ``@``
+# operator. The two are exactly equivalent for the 1-D and 2-D operands used
+# here, but ``@`` (numpy.matmul) raises spurious "divide by zero", "overflow"
+# and "invalid value" RuntimeWarnings on macOS builds of numpy 2.0 linked
+# against Apple Accelerate, whenever an operand is large enough to reach BLAS.
+# The computed values are correct; only the floating-point flags are wrong.
+# ``dot`` dispatches differently and stays quiet. Plain 1-D inner products are
+# unaffected, so those keep using ``@``.
+
 __all__ = [
     "contract3",
     "fw_step",
@@ -51,8 +60,8 @@ def fw_step(
     With ``alpha=None`` (the default) an exact line search is used; otherwise the
     step size is fixed at ``alpha``.
     """
-    Ax = A @ x
-    half_grad = (Ax - b) @ A + eta * x
+    Ax = A.dot(x)
+    half_grad = (Ax - b).dot(A) + eta * x
     i = int(np.argmin(half_grad))
 
     if alpha is not None:
@@ -143,7 +152,7 @@ def sc_weight_fw(
     ):
         lambda_ = fw_step(A, lambda_, b, eta)
         coef[:T0] = lambda_
-        err = Y @ coef
+        err = Y.dot(coef)
         vals.append(zeta ** 2 * (lambda_ @ lambda_) + (err @ err) / N0)
 
     return {"lambda": lambda_, "vals": np.asarray(vals)}
@@ -208,7 +217,7 @@ def sc_weight_fw_covariates(
                 Y_lambda[:, :T0], lambda_, Y_lambda[:, T0], N0 * zeta_lambda ** 2
             )
         lambda_coef[:T0] = lambda_
-        err_lambda = Y_lambda @ lambda_coef
+        err_lambda = Y_lambda.dot(lambda_coef)
 
         Y_omega = Y_beta[:, :T0].T
         if omega_intercept:
@@ -218,7 +227,7 @@ def sc_weight_fw_covariates(
                 Y_omega[:, :N0], omega, Y_omega[:, N0], T0 * zeta_omega ** 2
             )
         omega_coef[:N0] = omega
-        err_omega = Y_omega @ omega_coef
+        err_omega = Y_omega.dot(omega_coef)
 
         val = (
             zeta_omega ** 2 * (omega @ omega)
@@ -249,8 +258,8 @@ def sc_weight_fw_covariates(
             om_coef = np.append(weights["omega"], -1.0)
             grad_beta = -np.array(
                 [
-                    weights["err_lambda"] @ X[:N0, :, c] @ lam_coef / N0
-                    + weights["err_omega"] @ X[:, :T0, c].T @ om_coef / T0
+                    weights["err_lambda"].dot(X[:N0, :, c]).dot(lam_coef) / N0
+                    + weights["err_omega"].dot(X[:, :T0, c].T).dot(om_coef) / T0
                     for c in range(n_cov)
                 ]
             )

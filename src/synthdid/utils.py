@@ -8,6 +8,8 @@ from typing import Any, Iterator, Optional, Sequence, Union
 import numpy as np
 import pandas as pd
 
+# Matrix products use ``.dot`` rather than ``@``; see the note in solver.py.
+
 __all__ = [
     "PanelData",
     "panel_matrices",
@@ -293,9 +295,9 @@ def random_low_rank(
     V = rng.poisson(np.sqrt(np.arange(1, T + 1) / T)[:, None] * np.ones((T, rank)))
     alpha = np.outer(10 * rng.permutation(np.arange(1, n + 1)) / n, np.ones(T))
     beta = np.outer(np.ones(n), 10 * np.arange(1, T + 1) / T)
-    mu = U @ V.T + alpha + beta
+    mu = U.dot(V.T) + alpha + beta
 
     chol = np.linalg.cholesky(var)
-    error = rng.standard_normal((n, T)) @ chol.T
+    error = rng.standard_normal((n, T)).dot(chol.T)
     Y = mu + tau * W + sigma * error
     return {"Y": Y, "L": mu, "N0": n_0, "T0": T_0}

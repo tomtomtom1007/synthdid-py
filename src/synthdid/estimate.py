@@ -22,6 +22,8 @@ from .solver import (
 )
 from .utils import collapsed_form, pairwise_sum_decreasing
 
+# Matrix products use ``.dot`` rather than ``@``; see the note in solver.py.
+
 __all__ = [
     "Setup",
     "Weights",
@@ -474,7 +476,7 @@ def synthdid_estimate(
     X_beta = contract3(X, w.beta)
     unit_coef = np.concatenate([-w.omega, np.full(N1, 1.0 / N1)])
     time_coef = np.concatenate([-w.lambda_, np.full(T1, 1.0 / T1)])
-    estimate = float(unit_coef @ (Y - X_beta) @ time_coef)
+    estimate = float(unit_coef.dot(Y - X_beta).dot(time_coef))
 
     return SynthDIDEstimate(
         estimate,
@@ -590,5 +592,5 @@ def synthdid_effect_curve(estimate: SynthDIDEstimate) -> np.ndarray:
     T1 = setup.T1
 
     unit_coef = np.concatenate([-w.omega, np.full(N1, 1.0 / N1)])
-    tau_sc = unit_coef @ Y
+    tau_sc = unit_coef.dot(Y)
     return tau_sc[setup.T0:] - tau_sc[: setup.T0] @ w.lambda_

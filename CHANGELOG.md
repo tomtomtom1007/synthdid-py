@@ -15,3 +15,8 @@ First release.
   with `never_treated` and `not_yet_treated` control pools.
 - `panel_matrices` accepts covariate columns, an extension over the R version.
 - Bundled datasets: `california_prop99`, `CPS`, `PENN`.
+- Matrix products use `ndarray.dot` rather than `@`. The two are equivalent for the
+  operands used here, but `@` raises spurious "divide by zero", "overflow" and
+  "invalid value" RuntimeWarnings on macOS builds of numpy 2.0 linked against Apple
+  Accelerate -- which Python 3.9 and 3.10 pin users to. Estimates were always correct;
+  the warnings were not.

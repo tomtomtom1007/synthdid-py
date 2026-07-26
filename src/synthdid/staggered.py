@@ -22,6 +22,8 @@ import pandas as pd
 from .estimate import SynthDIDEstimate, did_estimate, sc_estimate, synthdid_estimate
 from .utils import ColumnRef, _resolve_column, sum_normalize
 
+# Matrix products use ``.dot`` rather than ``@``; see the note in solver.py.
+
 __all__ = [
     "StaggeredPanel",
     "StaggeredEstimate",
@@ -388,7 +390,7 @@ def _att_with_fixed_weights(
         Y = panel.Y[np.ix_(rows[kept], block["columns"])]
         unit_coef = np.concatenate([-omega, np.full(n_treated, 1.0 / n_treated)])
         time_coef = np.concatenate([-lam, np.full(n_post, 1.0 / n_post)])
-        taus.append(float(unit_coef @ Y @ time_coef))
+        taus.append(float(unit_coef.dot(Y).dot(time_coef)))
         weights.append(n_treated * n_post)
 
     if not taus:
