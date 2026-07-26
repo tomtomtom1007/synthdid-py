@@ -1,0 +1,92 @@
+name: publish
+
+# Publishes to PyPI via Trusted Publishing (OIDC): PyPI verifies this workflow's
+# short-lived identity token, so no API token is stored anywhere.
+#
+# To cut a release:
+#   1. bump `version` in pyproject.toml and add a CHANGELOG entry
+#   2. commit, then `git tag -a vX.Y.Z -m ...` and push the tag
+#   3. create a GitHub Release for that tag -- publishing it runs this workflow
+#
+# Requires a Trusted Publisher registered at
+# https://pypi.org/manage/project/synthdid-py/settings/publishing/ with
+# repository tomtomtom1007/synthdid-py, workflow publish.yml, environment pypi.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      repository:
+        description: Index to publish to
+        type: choice
+        options: [pypi, testpypi]
+        default: testpypi
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Check the package version matches the release tag
+        if: github.event_name == 'release'
+        run: |
+          python - <<'PY'
+          import os, re, pathlib, sys
+          tag = os.environ["TAG"].removeprefix("v")
+          text = pathlib.Path("pyproject.toml").read_text()
+          version = re.search(r'^version = "([^"]+)"', text, re.M).group(1)
+          if version != tag:
+              sys.exit(f"pyproject.toml version {version!r} != release tag {tag!r}")
+          print(f"version {version} matches tag")
+          PY
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+
+      - run: pip install build twine
+      - run: python -m build
+      - run: twine check --strict dist/*
+
+      - name: Install the built wheel and smoke-test it
+        run: |
+          python -m venv /tmp/smoke
+          /tmp/smoke/bin/pip install "$(ls dist/*.whl)"
+          /tmp/smoke/bin/python -W error::RuntimeWarning -c "
+          import synthdid as sd
+          panel = sd.panel_matrices(sd.load_california_prop99())
+          tau = sd.synthdid_estimate(panel.Y, panel.N0, panel.T0)
+          assert abs(float(tau) - -15.60383) < 1e-4, tau
+          print('smoke test ok:', tau)
+          "
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.event_name == 'release' && 'pypi' || inputs.repository }}
+      url: https://pypi.org/project/synthdid-py/
+    permissions:
+      id-token: write # the only credential needed; PyPI verifies it via OIDC
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@v1.14.1
+        with:
+          repository-url: >-
+            ${{ (github.event_name == 'release' || inputs.repository == 'pypi')
+                && 'https://upload.pypi.org/legacy/'
+                || 'https://test.pypi.org/legacy/' }}
