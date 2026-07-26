@@ -1,0 +1,43 @@
+synthdid-py
+===========
+
+This package is a Python port of the reference R implementation of synthetic
+difference-in-differences:
+
+    synthdid: Synthetic Difference-in-Difference Estimation
+    Dmitry Arkhangelsky, Susan Athey, David A. Hirshberg, Guido W. Imbens
+    and Stefan Wager
+    https://github.com/synth-inference/synthdid
+    Copyright 2019, Stanford University
+    Licensed under GPL (>= 2) | BSD 3-Clause; this port takes the BSD option.
+
+The estimator, the Frank-Wolfe solvers, the three variance estimators and the
+diagnostic plots follow that implementation closely, so that results agree.
+
+Method reference
+----------------
+    Dmitry Arkhangelsky, Susan Athey, David A. Hirshberg, Guido W. Imbens and
+    Stefan Wager (2021). "Synthetic Difference-in-Differences."
+    American Economic Review 111(12), 4088-4118.
+
+Staggered adoption
+------------------
+The staggered-adoption extension in `synthdid.staggered` is not part of the R
+package. Its cohort decomposition and treated-unit-period weighting follow the
+Stata package `sdid`:
+
+    Damian Clarke, Daniel Pailanir, Susan Athey and Guido Imbens (2023).
+    "Synthetic Difference-in-Differences Estimation."
+    https://github.com/Daniel-Pailanir/sdid
+
+Bundled data
+------------
+`california_prop99.csv` is redistributed from the R package, which derives it
+from the replication materials of:
+
+    Alberto Abadie, Alexis Diamond and Jens Hainmueller (2010). "Synthetic
+    Control Methods for Comparative Case Studies: Estimating the Effect of
+    California's Tobacco Control Program." Journal of the American Statistical
+    Association 105(490), 493-505.
+
+`CPS.csv` and `PENN.csv` are likewise redistributed from the R package.
